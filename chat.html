@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ChatVille - Video Chat</title>
+<link rel="stylesheet" href="style/style.css" />
+<script src="https://unpkg.com/mqtt@4.3.7/dist/mqtt.min.js"></script>
+</head>
+<body class="cv-body">
+<div class="cv-wrap" id="cvWrap">
+  <div class="cv-top">
+    <span class="cv-logo">ChatVille</span>
+    <span class="cv-status" id="cvStatus">Click <b>Start</b> to begin</span>
+    <span class="cv-top-right"><a href="./" target="_blank" rel="noopener">Home</a></span>
+  </div>
+
+  <div class="cv-main">
+    <div class="cv-stage">
+      <video id="cvRemote" autoplay playsinline></video>
+      <div class="cv-stage-idle" id="cvIdle">
+        <div class="cv-idle-icon">&#128249;</div>
+        <div class="cv-idle-text" id="cvIdleText">Your video chat will appear here</div>
+      </div>
+      <video id="cvSelf" muted autoplay playsinline></video>
+      <div class="cv-controls">
+        <button id="cvStart" class="cv-btn cv-btn-go">&#9654; Start</button>
+        <button id="cvStop" class="cv-btn cv-btn-stop" disabled>&#10007; Stop</button>
+        <button id="cvNext" class="cv-btn cv-btn-next" disabled>Next &#8635;</button>
+        <button id="cvInvite" class="cv-btn cv-btn-inv">Invite</button>
+        <a id="cvReport" class="cv-btn cv-btn-rep" href="abuse.html" target="_blank" rel="noopener">Report</a>
+      </div>
+    </div>
+
+    <div class="cv-chat">
+      <div class="cv-chat-head">Chat <span id="cvRoomTag"></span></div>
+      <div class="cv-msgs" id="cvMsgs"></div>
+      <div class="cv-chat-foot">
+        <input type="text" id="cvIn" maxlength="200" placeholder="Type a message..." />
+        <button id="cvSend" class="cv-btn cv-btn-go">Send</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="cv-modal" id="cvAge">
+  <div class="cv-modal-box">
+    <div class="cv-age-title">18+ Only</div>
+    <p>ChatVille is for adults. You must be at least 18 years of age to enter and use this site.</p>
+    <p>By clicking <b>I am 18 or older</b> you confirm that you meet the minimum age requirement in your country.</p>
+    <div class="cv-age-btns">
+      <button id="cvAgeOk" class="cv-btn cv-btn-go">I am 18 or older</button>
+      <a id="cvAgeNo" href="https://www.google.com/" class="cv-btn cv-btn-stop">I am under 18 — leave</a>
+    </div>
+  </div>
+</div>
+
+<div class="cv-modal" id="cvInviteM" style="display:none">
+  <div class="cv-modal-box">
+    <div class="cv-age-title">Invite a friend</div>
+    <p>Send this link — your friend opens it and you talk cam2cam:</p>
+    <input type="text" id="cvInviteLink" readonly class="cv-inv-link" />
+    <div class="cv-age-btns">
+      <button id="cvCopy" class="cv-btn cv-btn-inv">Copy link</button>
+      <button id="cvInvClose" class="cv-btn cv-btn-stop">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var EMBED = (location.search.indexOf("embed=1") !== -1);
+if (EMBED) document.body.classList.add("cv-embed");
+
+if (!sessionStorage.getItem("cv18")) document.getElementById("cvAge").style.display = "flex";
+else setAgeOk();
+document.getElementById("cvAgeOk").onclick = function(){ sessionStorage.setItem("cv18","1"); setAgeOk(); };
+document.getElementById("cvAgeNo").onclick = function(){ sessionStorage.setItem("cv18","0"); };
+function setAgeOk(){ document.getElementById("cvAge").style.display = "none"; }
+
+var $ = function(id){ return document.getElementById(id); };
+var statusEl = $("cvStatus"), idleEl = $("cvIdle"), idleText = $("cvIdleText"),
+    msgsEl = $("cvMsgs"), selfV = $("cvSelf"), remV = $("cvRemote"),
+    btnStart = $("cvStart"), btnStop = $("cvStop"), btnNext = $("cvNext"), btnInv = $("cvInvite");
+
+var BROKERS = [
+  "wss://broker.emqx.io:8084/mqtt",
+  "wss://broker.hivemq.com:8884/mqtt",
+  "wss://broker.emqx.io/mqtt"
+];
+var HALL = "cvx-hall", PREFIX = "cvx-call-";
+var myId = Math.random().toString(36).slice(2, 10);
+var client = null, pc = null, stream = null;
+var matched = false, searching = false, peerId = null, roomCode = null;
+var helloTimer = null, hellos = {};
+var inviteCode = null;
+
+function log(t, cls){
+  var d = document.createElement("div");
+  d.className = "cv-msg" + (cls ? " " + cls : "");
+  d.textContent = t;
+  msgsEl.appendChild(d);
+  msgsEl.scrollTop = msgsEl.scrollHeight;
+  while (msgsEl.children.length > 120) msgsEl.removeChild(msgsEl.firstChild);
+}
+function setStatus(t){ statusEl.innerHTML = t; }
+function setBtns(search){
+  btnStart.disabled = search;
+  btnStop.disabled = !search;
+  btnNext.disabled = !search;
+}
+function rndMsg(){
+  var m = ["hi there! :)","how are you?","where are you from?","lol","what a nice chat","hola!","salut","hey, how's your day?"];
+  return m[Math.floor(Math.random()*m.length)];
+}
+
+function tryBrokers(i){
+  if (i >= BROKERS.length){ setStatus('Connection failed. Try <b>Start</b> again.'); setBtns(false); return; }
+  setStatus("Connecting to server " + (i+1) + "...");
+  var c;
+  try { c = mqtt.connect(BROKERS[i], { clientId: "cvx" + myId + Math.floor(Math.random()*9999), clean: true, reconnectPeriod: 3000, connectTimeout: 8000 }); }
+  catch(e){ tryBrokers(i+1); return; }
+  c.on("connect", function(){
+    if (client && client !== c) { try { client.end(true); } catch(e){} }
+    client = c;
+    c.subscribe(HALL, {qos:1});
+    c.subscribe(PREFIX + "*", {qos:1});
+    setStatus("Connected. Press <b>Start</b>.");
+    if (inviteCode) startInvite(inviteCode);
+    else if (searching) joinHall();
+  });
+  c.on("close", function(){ if (client === c && searching) { setStatus("Server lost. Reconnecting..."); setTimeout(function(){ if (searching && client === c) c.reconnect(); }, 1500); } });
+  c.on("error", function(e){ if (client === c && !c.connected) { try { c.end(true); } catch(err){} tryBrokers(i+1); } });
+  c.on("message", function(topic, buf){
+    var m; try { m = JSON.parse(buf.toString()); } catch(e){ return; }
+    handleMsg(topic, m);
+  });
+}
+
+function joinHall(){
+  hellos = {}; matched = false;
+  clearTimeout(helloTimer);
+  if (client && client.connected){
+    client.publish(HALL, JSON.stringify({t:"hi", id:myId, ts:Date.now()}));
+    hellos[myId] = Date.now();
+  }
+  idleText.textContent = "Searching for a partner...";
+  idleEl.style.display = "flex";
+  setStatus("Searching for a partner...");
+  helloTimer = setTimeout(pairUp, 12000);
+}
+
+function pairUp(){
+  if (!searching) return;
+  var now = Date.now();
+  var ids = Object.keys(hellos).filter(function(id){ return now - hellos[id] < 25000; });
+  ids.sort();
+  if (ids.length < 2){ joinHall(); return; }
+  var idx = ids.indexOf(myId);
+  if (idx === -1){ joinHall(); return; }
+  var partner, iAmCaller;
+  if (idx % 2 === 0 && idx + 1 < ids.length){ partner = ids[idx+1]; iAmCaller = true; }
+  else if (idx % 2 === 1){ partner = ids[idx-1]; iAmCaller = false; }
+  else { joinHall(); return; }
+  if (partner === myId) { joinHall(); return; }
+  beginCall(PREFIX + [myId, partner].sort().join("-"), iAmCaller, null);
+}
+
+function beginCall(topic, caller, code){
+  matched = true; peerId = null;
+  clearTimeout(helloTimer);
+  idleEl.style.display = "none";
+  setStatus("Connecting your partner...");
+  var cfg = { iceServers: [
+    { urls: "stun:stun.l.google.com:19302" },
+    { urls: "stun:stun1.l.google.com:19302" },
+    { urls: "stun:global.stun.twilio.com:3478" }
+  ]};
+  pc = new RTCPeerConnection(cfg);
+  pc.onicecandidate = function(e){
+    if (e.candidate && client && client.connected)
+      client.publish(topic, JSON.stringify({t:"ice", from:myId, c:e.candidate}));
+  };
+  pc.ontrack = function(e){
+    if (e.streams && e.streams[0]) remV.srcObject = e.streams[0];
+  };
+  pc.onconnectionstatechange = function(){
+    var s = pc.connectionState;
+    if (s === "connected"){ setStatus("You are connected! Have a nice chat :)"); }
+    if (s === "disconnected") setStatus("Reconnecting...");
+    if (s === "failed"){ log("Connection with partner failed.","cv-sys"); nextPartner(); }
+  };
+  if (stream) stream.getTracks().forEach(function(t){ pc.addTrack(t, stream); });
+  if (caller){
+    pc.createOffer().then(function(o){ return pc.setLocalDescription(o); }).then(function(){
+      if (client && client.connected) client.publish(topic, JSON.stringify({t:"offer", from:myId, s:pc.localDescription}));
+    });
+  } else {
+    setStatus("Partner is connecting...");
+  }
+  if (code) $("cvRoomTag").textContent = "room " + code;
+}
+
+function startInvite(code){
+  inviteCode = code;
+  searching = true; matched = true;
+  setBtns(true);
+  beginCall(PREFIX + "room-" + code, true, code);
+  setStatus("Waiting for your friend to open the link...");
+}
+
+function handleMsg(topic, m){
+  if (topic === HALL){
+    if (m.t === "hi" && m.id !== myId) hellos[m.id] = m.ts || Date.now();
+    return;
+  }
+  var callTopic = topic;
+  if (m.t === "msg"){
+    log((m.from !== myId ? m.from + ": " : "You: ") + m.text, m.from !== myId ? "" : "cv-me");
+    return;
+  }
+  if (m.from === myId) return;
+  if (m.t === "offer"){
+    if (pc && pc.signalingState === "stable"){
+      peerId = m.from;
+      pc.setRemoteDescription(m.s).then(function(){ return pc.createAnswer(); }).then(function(a){ return pc.setLocalDescription(a); }).then(function(){
+        if (client && client.connected) client.publish(callTopic, JSON.stringify({t:"answer", from:myId, s:pc.localDescription}));
+      });
+    }
+  } else if (m.t === "answer"){
+    peerId = m.from;
+    pc.setRemoteDescription(m.s);
+  } else if (m.t === "ice"){
+    try { if (pc) pc.addIceCandidate(new RTCIceCandidate(m.c)); } catch(e){}
+  } else if (m.t === "bye"){
+    log("Partner left.","cv-sys");
+    nextPartner();
+  }
+}
+
+function startCam(cb){
+  if (stream){ cb(); return; }
+  setStatus("Starting your camera...");
+  navigator.mediaDevices.getUserMedia({ video: { width: {ideal:640}, height:{ideal:360} }, audio: true }).then(function(st){
+    stream = st; selfV.srcObject = st; cb();
+  }).catch(function(err){
+    log("Camera access denied: " + err.name + " — text chat only.","cv-sys");
+    setStatus("No camera. Text chat only.");
+    stream = null; selfV.style.display = "none"; cb();
+  });
+}
+
+function doStart(){
+  if (searching) return;
+  searching = true; setBtns(true);
+  msgsEl.innerHTML = "";
+  log("Welcome! Rules: be 18+, no rude behavior, no spam, no recording.","cv-sys");
+  startCam(function(){
+    tryBrokers(0);
+  });
+}
+
+function nextPartner(){
+  if (!searching) return;
+  if (client && client.connected && matched && peerId) {
+    try { client.publish(PREFIX + [myId, peerId].sort().join("-"), JSON.stringify({t:"bye", from:myId})); } catch(e){}
+  }
+  if (pc){ try { pc.close(); } catch(e){} pc = null; remV.srcObject = null; }
+  matched = false; peerId = null;
+  if (inviteCode){ setStatus("Waiting for your friend..."); idleText.textContent = "Waiting for your friend..."; idleEl.style.display = "flex"; return; }
+  log("Next stranger...","cv-sys");
+  joinHall();
+}
+
+function doStop(){
+  searching = false; matched = false; peerId = null; inviteCode = null;
+  clearTimeout(helloTimer);
+  if (client){ try { client.end(true); } catch(e){} client = null; }
+  if (pc){ try { pc.close(); } catch(e){} pc = null; }
+  if (stream){ stream.getTracks().forEach(function(t){ t.stop(); }); stream = null; }
+  selfV.srcObject = null; remV.srcObject = null; selfV.style.display = "";
+  setBtns(false);
+  idleEl.style.display = "flex"; idleText.textContent = "Your video chat will appear here";
+  setStatus("Stopped. Click <b>Start</b> again.");
+}
+
+btnStart.onclick = doStart;
+btnStop.onclick = doStop;
+btnNext.onclick = nextPartner;
+$("cvSend").onclick = sendMsg;
+$("cvIn").addEventListener("keydown", function(e){ if (e.key === "Enter") sendMsg(); });
+function sendMsg(){
+  var v = $("cvIn").value.trim();
+  if (!v) return;
+  if (client && client.connected && (matched || inviteCode)){
+    var topic = inviteCode ? (PREFIX + "room-" + inviteCode) : (PREFIX + [myId, peerId||""].sort().join("-"));
+    client.publish(topic, JSON.stringify({t:"msg", from:myId, text:v}));
+  }
+  log("You: " + v, "cv-me");
+  $("cvIn").value = "";
+}
+
+btnInv.onclick = function(){
+  var code = Math.random().toString(36).slice(2, 8) + Math.random().toString(36).slice(2, 6);
+  var link = location.origin + location.pathname + "?r=" + code;
+  $("cvInviteLink").value = link;
+  $("cvInviteM").style.display = "flex";
+};
+$("cvCopy").onclick = function(){
+  var el = $("cvInviteLink"); el.select();
+  try { document.execCommand("copy"); } catch(e){}
+  $("cvCopy").textContent = "Copied!";
+  setTimeout(function(){ $("cvCopy").textContent = "Copy link"; }, 1500);
+};
+$("cvInvClose").onclick = function(){ $("cvInviteM").style.display = "none"; };
+
+// incoming invite link
+var r = new URLSearchParams(location.search).get("r");
+if (r){
+  var code = String(r).replace(/[^a-z0-9]/gi,"").slice(0,16);
+  if (code){
+    sessionStorage.setItem("cv18","1");
+    searching = true; matched = true; inviteCode = code;
+    setBtns(true);
+    log("You were invited to a private cam2cam. Camera starts below.","cv-sys");
+    setStatus("Invitation room ready — press <b>Start</b>");
+    btnStart.onclick = function(){
+      startCam(function(){
+        tryBrokers(0); // on connect -> startInvite
+        // if already connected path not yet, trigger after cam:
+        if (client && client.connected) startInvite(code);
+      });
+    };
+  }
+}
+
+window.addEventListener("beforeunload", function(){
+  if (client && client.connected && peerId){
+    try { client.publish(PREFIX + [myId, peerId].sort().join("-"), JSON.stringify({t:"bye", from:myId})); } catch(e){}
+  }
+});
+})();
+</script>
+</body>
+</html>

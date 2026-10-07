@@ -1,0 +1,325 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" class="no-js">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="viewport" content="width=device-width, user-scalable=no">
+<title>ChatVille - Report Abuse</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" type="text/css" href="https://www2.cammedia.com/style/style.css" />
+<script language='javascript' type="a56873c22ffaaec4e67b97c2-text/javascript">
+   var attachments=new Array('attachment1','attachment2','attachment3','attachment4','attachment5','attachment6','attachment7','attachment8','attachment9');
+   function Attach(act) {
+      if (act=="on") {
+        for(i=0;i<attachments.length;i++) {
+          var disp=document.getElementById(attachments[i]);
+          if (disp.style.display=="none") {
+            disp.style.display="";
+            break; }
+          if (i==attachments.length-1) alert('Sorry, you cannot add more than 10 attachments to a single message!'); }}
+      else {
+        for(i=attachments.length-1;i>=0;i--) {
+          var disp=document.getElementById(attachments[i]);
+          if (disp.style.display=="") {
+            disp.style.display="none";
+            break; }}}}
+
+   // COLOR VARS FOR VALIDATION
+   var EColor='ff0000';
+   var DColor='1C8A18';
+   var CColor='B6B6B6';
+
+   // ERROR MESSAGES FOR VALIDATION
+   var EContact='Please enter your name!';
+   var EEmail='Please enter a valid email address in a email@domain.com format!';
+   var ENickname='Please enter a valid Nickname of the user you are reporting!';
+   var EMessage='Please enter your message!';
+   var Ecode='Please enter the validation code!';
+
+   // REPORT THE MESSAGE BASED ON VALIDATION
+   function Report(id,error,message,fcolor) {
+      document.getElementById(error).style.border='1px solid #'+fcolor;
+      document.getElementById(id).style.color='#'+EColor;
+      document.getElementById(id).innerHTML=message;   
+   }
+   // CHECK INPUTTED INFORMATION
+   function VChecking(field){      
+      Report('E',field,'',CColor);
+   }
+   // Contact VALIDATION
+   function VContact(entry) {
+      var el=entry.length;
+      if (el < 4) {
+         Report('E','Contact',EContact,EColor);
+         return false; 
+      }
+      else Report('E','Contact','',DColor);
+   }
+   // EMAIL VALIDATION
+   function VEmail(entry) {
+      var theForm=document.fr;
+      var el=entry.length;
+      if (el!=0) {
+         for (var i=el-1; i>=0; i--) {
+            if (entry.charAt(i)==' ') entry=entry.replace(entry.charAt(i), ''); 
+         }
+      }
+      theForm.Email.value = entry;
+      var el=entry.length;
+      f=entry.indexOf('@');
+      ff=entry.indexOf('@',f+1);
+      s=entry.indexOf('.');
+      if ((entry.charAt(0)=='-') || (entry.charAt(0)=='.') || (entry.charAt(0)=='@') || (entry.charAt(el-1)=='-') || (entry.charAt(el-1)=='.') || (entry.charAt(el-1)=='@') || (el>80) || (el<6) || (f==-1) || (s==-1) || (ff>-1)) {
+         Report('E','Email',EEmail,EColor);
+         return false; 
+      }
+      else Report('E','Email','',DColor);
+   
+      re=/[^a-zA-Z0-9\-\.\@\_]/;
+      if (entry.match(re)) {
+         Report('E','Email',EEmail,EColor);
+         return false; 
+      }
+      else Report('E','Email','',DColor);
+   }
+   // Nickname VALIDATION
+   function VNickname(entry) {
+      re=/^[a-zA-Z0-9]{3,15}$/;
+      if (!entry.match(re)) {
+         Report('E','Nickname',ENickname,EColor);
+         return false; 
+      }
+      else Report('E','Nickname','',DColor);
+   }
+   // Message VALIDATION
+   function VMessage(entry) {
+      var el=entry.length;
+      if (el < 3) {
+         Report('E','Message',EMessage,EColor);
+         return false; 
+      }
+      else Report('E','Message','',DColor);
+   }
+   function VCode(entry) {
+      var el=entry.length;
+      if (el < 3) {
+         Report('E','code',Ecode,EColor);
+         theForm.code.focus();
+         return false; 
+      }
+   }
+   // FORM VALIDATION
+   function Validate(theForm) {
+      var entry=theForm.Contact.value;
+      var el=entry.length;
+      if (el < 4) {
+         Report('E','Contact',EContact,EColor);
+         return false; 
+      }
+      else Report('E','Contact','',DColor);
+
+      // EMAIL VALIDATION
+      var entry=theForm.Email.value;
+      var el=entry.length;
+      if (el!=0) {
+         for (var i=el-1; i>=0; i--) {
+            if (entry.charAt(i)==' ') entry=entry.replace(entry.charAt(i), ''); 
+         }
+      }
+      theForm.Email.value = entry;
+      var el=entry.length;
+      f=entry.indexOf('@');
+      ff=entry.indexOf('@',f+1);
+      s=entry.indexOf('.');
+      if ((entry.charAt(0)=='-') || (entry.charAt(0)=='.') || (entry.charAt(0)=='@') || (entry.charAt(el-1)=='-') || (entry.charAt(el-1)=='.') || (entry.charAt(el-1)=='@') || (el>80) || (el<6) || (f==-1) || (s==-1) || (ff>-1)) {
+         Report('E','Email',EEmail,EColor);
+         return false; 
+      }
+      else Report('E','Email','',DColor);
+   
+      re=/[^a-zA-Z0-9\-\.\@\_]/;
+      if (entry.match(re)) {
+         Report('E','Email',EEmail,EColor);
+         return false; 
+      }
+      else Report('E','Email','',DColor);
+
+      var entry=theForm.Nickname.value;
+      re=/^[a-zA-Z0-9]{3,15}$/;
+      if (!entry.match(re)) {
+         Report('E','Nickname',ENickname,EColor);
+         return false; 
+      }
+      else Report('E','Nickname','',DColor);
+
+      var entry=theForm.Message.value;
+      var el=entry.length;
+      if (el < 4) {
+         Report('E','Message',EMessage,EColor);
+         return false; 
+      }
+      else Report('E','Message','',DColor);
+
+      var entry=theForm.code.value;
+      var el=entry.length;
+      if (el < 4) {
+         Report('E','code',Ecode,EColor);
+         return false; 
+      }
+      else Report('E','code','',DColor);
+
+   }
+</script>
+</head>
+<body style="background:transparent;"><div class="text" id="i_content">
+	<div class="account">
+		<div class="form_box">
+			<div class="account_body">
+				<h1>Report Abuse</h1>
+
+				<p>Please complete the form below to report abuse. The following is considered to be abuse: underage users, illegal or non-consensual images, videos or streams, rude or offensive behavior, sharing of any type of contact information in public chat, unsolicited promotion of another website or service, playing recorded videos, using any type of recording devices, soliciting payment outside of the website, attempting to defraud, any type of illegal behavior, disclosure of private information about any user, or any type of behavior which would have detrimental effect on our website or users.<br><br>
+				We take abuse complaints very seriously by investigating all complaints within 24 hours, and taking immediate action to remove any illegal or non consensual content. We will remove all non consensual content within 24 hours of receiving the request from any party who is depicted in the reported content.</p>
+				<div class="ct_alert" id="E"></div>
+
+				<div class="form_body">
+					<form method="post" action="#" name="fr" onsubmit="if (!window.__cfRLUnblockHandlers) return false; return Validate(this)" enctype="multipart/form-data" data-cf-modified-a56873c22ffaaec4e67b97c2-="">
+					<input type="hidden" name="MAX_FILE_SIZE" value="4924288">
+					<input type="hidden" name="site" value="chatville"><input type="hidden" name="whois" value="TLguMjtjmL3tHTwEqv2Apb1ynLNt3avEojMmLKdEozMyYucEonwv5zLrfmqL90u">					<fieldset class="container">
+						<table border="0" cellspacing="0" cellpadding="0" class="form_table">  
+						<tr>
+						   <td align="right"><b>Nickname:</b></td>
+						   <td><input type="text" id="Nick" name="Nick" maxlength="15" value="Guest"></td>
+						</tr>
+						<tr>
+						   <td align="right"><b>Contact Name:</b></td>
+						   <td><input type="text" id="Contact" name="Contact" maxlength="30" value=""></td>
+						</tr>
+						<tr>
+						   <td align="right"><b>Your Email:</b></td>
+						   <td><input type="text" id="Email" name="Email" maxlength="50" value=""></td>
+						</tr>
+						<tr>
+						   <td align="right"><b>Nickname Of Person Being Reported:</b></td>
+						   <td><input type="text" id="Nickname" name="Nickname" maxlength="50" value=""></td>
+						</tr>
+						<tr>
+						   <td align="right"><b>Room Where Abuse Occurred:</b></td>
+						   <td><input type="text" id="Room" name="Room" value="" maxlength="20"></td>
+						</tr>
+						<tr>
+						   <td align="right"><b>Type Of Abuse:</b></td>
+						   <td><select name="Topic" class="sel">							<option value="Inappropriate Behavior">Inapproppriate Behavior</option>
+						        <option value="Underage User">Underage User</option>
+						        <option value="Illegal Content">Illegal Content</option>
+							<option value="Incorrect Gender">Incorrect Gender</option>
+							<option value="Spamming">Spamming</option>
+							<option value="Playing Videos">Playing Videos</option>
+						        <option value="Hacking">Hacking</option>
+							<option value="Fraud">Fraud</option>
+							<option value="Other">Other</option>
+						   </select></td>
+						</tr>
+						<tr>
+						   <td align="right"><b>Details Of Abuse:</b></td>
+						   <td><textarea name="Message" id="Message" cols="10" rows="15" style="height:120px;margin-top:4px;border:1px solid #e4e4e4;border-radius:0;-webkit-border-radius:0;padding:2px 4px;" /></textarea></td>
+						</tr>
+						<tr>
+						   <td colspan="2">&nbsp;</td>
+						</tr>
+						<tr>
+						   <td colspan="2" style="text-align:center;">
+							<div>
+								<input type="file" name="File1" id="File1" class="inputfile" data-multiple-caption="{count} files selected" multiple />
+								<label for="File1"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="17" viewBox="0 0 20 17"><path d="M10 0l-5.2 4.9h3.3v5.1h3.8v-5.1h3.3l-5.2-4.9zm9.3 11.5l-3.2-2.1h-2l3.4 2.6h-3.5c-.1 0-.2.1-.2.1l-.8 2.3h-6l-.8-2.2c-.1-.1-.1-.2-.2-.2h-3.6l3.4-2.6h-2l-3.2 2.1c-.4.3-.7 1-.6 1.5l.6 3.1c.1.5.7.9 1.2.9h16.3c.6 0 1.1-.4 1.3-.9l.6-3.1c.1-.5-.2-1.2-.7-1.5z"/></svg> <span>Choose a file&hellip;</span></label>
+							</div>
+							<div id="attachment1" style="display:none;">
+								<input type="file" name="File2" id="File2" class="inputfile" data-multiple-caption="{count} files selected" multiple />
+								<label for="File2"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="17" viewBox="0 0 20 17"><path d="M10 0l-5.2 4.9h3.3v5.1h3.8v-5.1h3.3l-5.2-4.9zm9.3 11.5l-3.2-2.1h-2l3.4 2.6h-3.5c-.1 0-.2.1-.2.1l-.8 2.3h-6l-.8-2.2c-.1-.1-.1-.2-.2-.2h-3.6l3.4-2.6h-2l-3.2 2.1c-.4.3-.7 1-.6 1.5l.6 3.1c.1.5.7.9 1.2.9h16.3c.6 0 1.1-.4 1.3-.9l.6-3.1c.1-.5-.2-1.2-.7-1.5z"/></svg> <span>Choose a file&hellip;</span></label>
+							</div>
+							<div id="attachment2" style="display:none;">
+								<input type="file" name="File3" id="File3" class="inputfile" data-multiple-caption="{count} files selected" multiple />
+								<label for="File3"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="17" viewBox="0 0 20 17"><path d="M10 0l-5.2 4.9h3.3v5.1h3.8v-5.1h3.3l-5.2-4.9zm9.3 11.5l-3.2-2.1h-2l3.4 2.6h-3.5c-.1 0-.2.1-.2.1l-.8 2.3h-6l-.8-2.2c-.1-.1-.1-.2-.2-.2h-3.6l3.4-2.6h-2l-3.2 2.1c-.4.3-.7 1-.6 1.5l.6 3.1c.1.5.7.9 1.2.9h16.3c.6 0 1.1-.4 1.3-.9l.6-3.1c.1-.5-.2-1.2-.7-1.5z"/></svg> <span>Choose a file&hellip;</span></label>
+							</div>
+							<div id="attachment3" style="display:none;">
+								<input type="file" name="File4" id="File4" class="inputfile" data-multiple-caption="{count} files selected" multiple />
+								<label for="File4"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="17" viewBox="0 0 20 17"><path d="M10 0l-5.2 4.9h3.3v5.1h3.8v-5.1h3.3l-5.2-4.9zm9.3 11.5l-3.2-2.1h-2l3.4 2.6h-3.5c-.1 0-.2.1-.2.1l-.8 2.3h-6l-.8-2.2c-.1-.1-.1-.2-.2-.2h-3.6l3.4-2.6h-2l-3.2 2.1c-.4.3-.7 1-.6 1.5l.6 3.1c.1.5.7.9 1.2.9h16.3c.6 0 1.1-.4 1.3-.9l.6-3.1c.1-.5-.2-1.2-.7-1.5z"/></svg> <span>Choose a file&hellip;</span></label>
+							</div>
+							<div id="attachment4" style="display:none;">
+								<input type="file" name="File5" id="File5" class="inputfile" data-multiple-caption="{count} files selected" multiple />
+								<label for="File5"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="17" viewBox="0 0 20 17"><path d="M10 0l-5.2 4.9h3.3v5.1h3.8v-5.1h3.3l-5.2-4.9zm9.3 11.5l-3.2-2.1h-2l3.4 2.6h-3.5c-.1 0-.2.1-.2.1l-.8 2.3h-6l-.8-2.2c-.1-.1-.1-.2-.2-.2h-3.6l3.4-2.6h-2l-3.2 2.1c-.4.3-.7 1-.6 1.5l.6 3.1c.1.5.7.9 1.2.9h16.3c.6 0 1.1-.4 1.3-.9l.6-3.1c.1-.5-.2-1.2-.7-1.5z"/></svg> <span>Choose a file&hellip;</span></label>
+							</div>
+							<div id="attachment5" style="display:none;">
+								<input type="file" name="File6" id="File6" class="inputfile" data-multiple-caption="{count} files selected" multiple />
+								<label for="File6"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="17" viewBox="0 0 20 17"><path d="M10 0l-5.2 4.9h3.3v5.1h3.8v-5.1h3.3l-5.2-4.9zm9.3 11.5l-3.2-2.1h-2l3.4 2.6h-3.5c-.1 0-.2.1-.2.1l-.8 2.3h-6l-.8-2.2c-.1-.1-.1-.2-.2-.2h-3.6l3.4-2.6h-2l-3.2 2.1c-.4.3-.7 1-.6 1.5l.6 3.1c.1.5.7.9 1.2.9h16.3c.6 0 1.1-.4 1.3-.9l.6-3.1c.1-.5-.2-1.2-.7-1.5z"/></svg> <span>Choose a file&hellip;</span></label>
+							</div>
+							<div id="attachment6" style="display:none;">
+								<input type="file" name="File7" id="File7" class="inputfile" data-multiple-caption="{count} files selected" multiple />
+								<label for="File7"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="17" viewBox="0 0 20 17"><path d="M10 0l-5.2 4.9h3.3v5.1h3.8v-5.1h3.3l-5.2-4.9zm9.3 11.5l-3.2-2.1h-2l3.4 2.6h-3.5c-.1 0-.2.1-.2.1l-.8 2.3h-6l-.8-2.2c-.1-.1-.1-.2-.2-.2h-3.6l3.4-2.6h-2l-3.2 2.1c-.4.3-.7 1-.6 1.5l.6 3.1c.1.5.7.9 1.2.9h16.3c.6 0 1.1-.4 1.3-.9l.6-3.1c.1-.5-.2-1.2-.7-1.5z"/></svg> <span>Choose a file&hellip;</span></label>
+							</div>
+							<div id="attachment7" style="display:none;">
+								<input type="file" name="File8" id="File8" class="inputfile" data-multiple-caption="{count} files selected" multiple />
+								<label for="File8"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="17" viewBox="0 0 20 17"><path d="M10 0l-5.2 4.9h3.3v5.1h3.8v-5.1h3.3l-5.2-4.9zm9.3 11.5l-3.2-2.1h-2l3.4 2.6h-3.5c-.1 0-.2.1-.2.1l-.8 2.3h-6l-.8-2.2c-.1-.1-.1-.2-.2-.2h-3.6l3.4-2.6h-2l-3.2 2.1c-.4.3-.7 1-.6 1.5l.6 3.1c.1.5.7.9 1.2.9h16.3c.6 0 1.1-.4 1.3-.9l.6-3.1c.1-.5-.2-1.2-.7-1.5z"/></svg> <span>Choose a file&hellip;</span></label>
+							</div>
+							<div id="attachment8" style="display:none;">
+								<input type="file" name="File9" id="File9" class="inputfile" data-multiple-caption="{count} files selected" multiple />
+								<label for="File9"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="17" viewBox="0 0 20 17"><path d="M10 0l-5.2 4.9h3.3v5.1h3.8v-5.1h3.3l-5.2-4.9zm9.3 11.5l-3.2-2.1h-2l3.4 2.6h-3.5c-.1 0-.2.1-.2.1l-.8 2.3h-6l-.8-2.2c-.1-.1-.1-.2-.2-.2h-3.6l3.4-2.6h-2l-3.2 2.1c-.4.3-.7 1-.6 1.5l.6 3.1c.1.5.7.9 1.2.9h16.3c.6 0 1.1-.4 1.3-.9l.6-3.1c.1-.5-.2-1.2-.7-1.5z"/></svg> <span>Choose a file&hellip;</span></label>
+							</div>
+							<div id="attachment9" style="display:none;">
+								<input type="file" name="File10" id="File10" class="inputfile" data-multiple-caption="{count} files selected" multiple />
+								<label for="File10"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="17" viewBox="0 0 20 17"><path d="M10 0l-5.2 4.9h3.3v5.1h3.8v-5.1h3.3l-5.2-4.9zm9.3 11.5l-3.2-2.1h-2l3.4 2.6h-3.5c-.1 0-.2.1-.2.1l-.8 2.3h-6l-.8-2.2c-.1-.1-.1-.2-.2-.2h-3.6l3.4-2.6h-2l-3.2 2.1c-.4.3-.7 1-.6 1.5l.6 3.1c.1.5.7.9 1.2.9h16.3c.6 0 1.1-.4 1.3-.9l.6-3.1c.1-.5-.2-1.2-.7-1.5z"/></svg> <span>Choose a file&hellip;</span></label>
+							</div>
+						   </td>
+						</tr>
+						<tr>
+						   <td colspan="2" style="text-align:center;"><input type="button" value=" - " class="button" onClick="if (!window.__cfRLUnblockHandlers) return false; Attach('off')" style="margin:0;" data-cf-modified-a56873c22ffaaec4e67b97c2-=""> <input type="button" value=" + " class="button" style="margin:0;" onClick="if (!window.__cfRLUnblockHandlers) return false; Attach('on')" title="Upload Another File" data-cf-modified-a56873c22ffaaec4e67b97c2-=""></td>
+						</tr>
+						<tr>
+						   <td colspan="2" style="text-align:center;"><i>* Please attach a screenshot whenever possible.</i></td>
+						</tr>
+						<tr>
+						   <td colspan="2">&nbsp;</td>
+						</tr>
+						<tr>
+						   <td colspan="2" style="text-align:center;"><img border="1" src="https://www2.cammedia.com/captcha.php?w=TLguMjtjmL3tHTwEqv2Apb1ynLNt3avEojMmLKdEozMyYucEonwv5zLrfmqL90u" width="95" height="30"></td>
+						</tr>
+						<tr>
+						   <td colspan="2" style="text-align:center;">Enter above validation code:</td>
+						</tr>
+						<tr>
+						   <td colspan="2" style="text-align:center;"><input name="code" type="text" id="code" maxlength="20"></td>
+						</tr>
+						<tr>
+						   <td colspan="2" style="text-align:center;"><input type="submit" id="formsubmit" value="Send Report" class="button"/></td>
+						</tr>
+						</table>
+					</fieldset>
+					</form>
+					<p class="rcenter">Please read below before asking for someone to be banned form the site:</p>
+					<p><em>&quot;Nothing can be loved or hated unless it is first understood.&quot;<b> - Leonardo DaVinci</b></em></p>
+					<p>Everyone is here for a reason. People come for friendship, laughs, sex, attention, or money, some come for the drama, and for some it's their only window to the outside world. Whatever your reason for being here, our job is to deliver the experience you came for.</p>
+					<p>There are only 3 instances when we will always ban an account:</p>
+					<ul>
+						<li>Someone is suspected of being underage.</li>
+						<li>Someone is attempting to defraud.</li>
+						<li>Someone is breaking a common law.</li>
+					</ul>
+					<p>In most other cases we will do everything in our power not to ban, but work to find a happy medium where each person can get what they came for without ruining the experience for anyone else. This means that if someone is being rude to you and your conflict can't be resolved, we kindly ask that you click the Block button in their user menu to never see or hear them again. If that fails, please report them to a moderator on the site before filing an abuse complaint.</p>
+					<p><b>Content Complaint Resolution Policy</b>
+					<p>Our policy is to review and resolve all reported content complaints within five (5) business days. In the event there is evidence of illegal content, it will be removed immediately. In the event the complainant disagrees with our decision, the disagreement shall be resolved by a neutral body, at our expense.</p>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<div class="footer">
+	<div class="clear">&nbsp;</div>
+	<p id="txt_copyright">&copy; 2026 ChatVille. All Rights Reserved.</p>
+	<script type="a56873c22ffaaec4e67b97c2-text/javascript" src="https://www2.cammedia.com/members/_js/jquery-3.3.1.min.js"></script>
+	<script language="javascript" type="a56873c22ffaaec4e67b97c2-text/javascript">
+	$(document).click(function(event) {
+		$target = $(event.target);
+		if (!$target.closest(".text, .jconfirm").length && parent.$("#pop_btn_close").length > 0) parent.$("#pop_btn_close").click();
+	});
+	</script></div>
+<script type="a56873c22ffaaec4e67b97c2-text/javascript" src="https://www2.cammedia.com/members/_js/upload.js"></script>
+<script src="https://www2.cammedia.com/cdn-cgi/scripts/7d0fa10a/cloudflare-static/rocket-loader.min.js" data-cf-settings="a56873c22ffaaec4e67b97c2-|49" defer></script></body>
+</html>
